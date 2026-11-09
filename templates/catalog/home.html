@@ -1,0 +1,204 @@
+{% extends 'base.html' %}
+{% load price_filters %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto px-4 pt-6 pb-12">
+
+    <!-- ۱. نوار دسته‌بندی‌های دایره‌ای (سبک هایلایت اینستاگرام) -->
+    {% if categories %}
+    <section class="mb-8">
+        <div class="flex items-start gap-4 sm:gap-7 overflow-x-auto no-scrollbar py-2 px-1">
+            
+            <!-- دکمه «همه محصولات» -->
+            <a href="{% url 'catalog:home' %}" class="flex flex-col items-center flex-shrink-0 group w-20 sm:w-24">
+                <div class="w-16 h-16 sm:w-20 sm:h-20 rounded-full p-[2.5px] transition-transform duration-300 group-hover:scale-105 {% if not selected_category and not only_discount %}bg-gradient-to-tr from-taupe via-[#D4A383] to-espresso{% else %}bg-[#DFD3C7]{% endif %}">
+                    <div class="w-full h-full rounded-full bg-sand flex items-center justify-center border-2 border-ivory">
+                        <span class="text-xs font-medium text-espresso">همه</span>
+                    </div>
+                </div>
+                <span class="mt-2 text-xs text-center line-clamp-1 {% if not selected_category and not only_discount %}font-bold text-espresso{% else %}text-espresso/75{% endif %}">
+                    همه مدل‌ها
+                </span>
+            </a>
+
+            <!-- لیست دسته‌بندی‌های داینامیک از دیتابیس -->
+            {% for cat in categories %}
+            <a href="?category={{ cat.slug }}" class="flex flex-col items-center flex-shrink-0 group w-20 sm:w-24">
+                <div class="w-16 h-16 sm:w-20 sm:h-20 rounded-full p-[2.5px] transition-transform duration-300 group-hover:scale-105 {% if selected_category.id == cat.id %}bg-gradient-to-tr from-taupe via-[#D4A383] to-espresso{% else %}bg-gradient-to-tr from-[#C89D84] to-[#E6D2C5]{% endif %}">
+                    <div class="w-full h-full rounded-full bg-white overflow-hidden border-2 border-ivory flex items-center justify-center">
+                        {% if cat.image %}
+                            <img src="{{ cat.image.url }}" alt="{{ cat.name }}" class="w-full h-full object-cover">
+                        {% else %}
+                            <span class="text-xs text-taupe font-medium px-1 text-center">{{ cat.name|truncatechars:10 }}</span>
+                        {% endif %}
+                    </div>
+                </div>
+                <span class="mt-2 text-xs text-center line-clamp-1 {% if selected_category.id == cat.id %}font-bold text-espresso{% else %}text-espresso/80{% endif %}">
+                    {{ cat.name }}
+                </span>
+            </a>
+            {% endfor %}
+
+            <!-- دایره ویژه تخفیف‌دارها -->
+            <a href="?discount=1" class="flex flex-col items-center flex-shrink-0 group w-20 sm:w-24">
+                <div class="w-16 h-16 sm:w-20 sm:h-20 rounded-full p-[2.5px] transition-transform duration-300 group-hover:scale-105 {% if only_discount %}bg-gradient-to-tr from-rose-700 to-amber-600{% else %}bg-gradient-to-tr from-[#C89D84] to-[#E6D2C5]{% endif %}">
+                    <div class="w-full h-full rounded-full bg-[#F8EAE6] flex items-center justify-center border-2 border-ivory">
+                        <span class="text-xs font-bold text-[#8E4A42]">% تخفیف</span>
+                    </div>
+                </div>
+                <span class="mt-2 text-xs text-center line-clamp-1 {% if only_discount %}font-bold text-[#8E4A42]{% else %}text-espresso/80{% endif %}">
+                    تخفیف‌دارها
+                </span>
+            </a>
+
+        </div>
+    </section>
+    {% endif %}
+
+    <!-- ۲. بنر اصلی (Hero) - فقط در صفحه اول بدون فیلتر نمایش داده می‌شود -->
+    {% if not selected_category and not only_discount and not search_query %}
+        {% if site_settings.hero_image or site_settings.hero_title %}
+        <section class="mb-10">
+            <div class="relative rounded-3xl overflow-hidden bg-sand border border-[#E8DDD3]">
+                {% if site_settings.hero_image %}
+                    <div class="relative h-80 sm:h-[28rem] w-full">
+                        <img src="{{ site_settings.hero_image.url }}" alt="{{ site_settings.hero_title }}" class="w-full h-full object-cover">
+                        <div class="absolute inset-0 bg-gradient-to-t from-espresso/80 via-espresso/25 to-transparent flex flex-col justify-end p-6 sm:p-10 text-white">
+                            <span class="inline-flex items-center gap-1.5 self-start backdrop-blur-md bg-white/15 border border-white/30 text-white/90 text-[11px] sm:text-xs tracking-[0.15em] px-4 py-1.5 rounded-full mb-3 shadow-sm">
+                                <span class="w-1.5 h-1.5 rounded-full bg-white/80"></span>
+                                {{ site_settings.site_name }}
+                            </span>
+                            <h1 class="text-balance text-3xl sm:text-5xl md:text-6xl font-bold leading-[1.15] tracking-tight mb-3">{{ site_settings.hero_title }}</h1>
+                            {% if site_settings.hero_subtitle %}
+                                <p class="text-sm sm:text-base text-white/90 font-light max-w-xl mb-5">{{ site_settings.hero_subtitle }}</p>
+                            {% endif %}
+                            <a href="#products" class="inline-flex items-center gap-2 self-start backdrop-blur-md bg-white/15 hover:bg-white/25 border border-white/40 text-white text-xs sm:text-sm font-medium px-5 py-2.5 rounded-full transition-all duration-300">
+                                مشاهده کالکشن
+                                <span aria-hidden="true">↓</span>
+                            </a>
+                        </div>
+                    </div>
+                {% else %}
+                    <div class="py-12 px-6 sm:py-16 sm:px-12 text-center bg-gradient-to-b from-sand to-ivory">
+                        <span class="inline-flex items-center gap-1.5 justify-center text-xs tracking-[0.15em] text-taupe backdrop-blur-md bg-white/60 border border-white/40 px-4 py-1.5 rounded-full mb-4 shadow-sm">
+                            <span class="w-1.5 h-1.5 rounded-full bg-taupe"></span>
+                            {{ site_settings.site_name }}
+                        </span>
+                        <h1 class="text-balance text-3xl sm:text-5xl md:text-6xl font-bold leading-[1.15] tracking-tight text-espresso mb-3">{{ site_settings.hero_title }}</h1>
+                        {% if site_settings.hero_subtitle %}
+                            <p class="text-sm sm:text-base text-espresso/70 font-light max-w-lg mx-auto mb-6">{{ site_settings.hero_subtitle }}</p>
+                        {% endif %}
+                        <a href="#products" class="inline-flex items-center gap-2 bg-espresso hover:bg-taupe text-white text-xs sm:text-sm font-medium px-5 py-2.5 rounded-full transition-all duration-300">
+                            مشاهده کالکشن
+                            <span aria-hidden="true">↓</span>
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </section>
+        {% endif %}
+    {% endif %}
+
+    <!-- ۳. عنوان بخش محصولات و فیلتر فعال -->
+    <div id="products" class="scroll-mt-24 sm:scroll-mt-28 flex items-center justify-between mb-6">
+        <div>
+            <h2 class="text-lg sm:text-xl font-bold text-espresso">
+                {% if selected_category %}
+                    {{ selected_category.name }}
+                {% elif only_discount %}
+                    محصولات دارای تخفیف ویژه
+                {% elif search_query %}
+                    نتایج جستجو برای «{{ search_query }}»
+                {% else %}
+                    جدیدترین طراحی‌ها
+                {% endif %}
+            </h2>
+        </div>
+
+        {% if selected_category or only_discount or search_query %}
+            <a href="{% url 'catalog:home' %}" class="text-xs text-taupe hover:text-espresso border border-[#DFD3C7] px-3 py-1.5 rounded-full bg-white transition">
+                حذف فیلتر ✕
+            </a>
+        {% endif %}
+    </div>
+
+    <!-- ۴. شبکه کارت محصولات (Product Grid) -->
+    {% if products %}
+        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
+            {% for product in products %}
+                <a href="{% url 'catalog:product_detail' product.slug %}" class="group bg-white rounded-2xl overflow-hidden border border-[#EFE8DF] hover:border-[#D5C3B5] transition-all duration-300 hover:shadow-md flex flex-col">
+                    
+                    <!-- تصویر عمودی با نسبت 3:4 -->
+                    <div class="relative aspect-[3/4] w-full bg-sand overflow-hidden">
+                        <img src="{{ product.main_image.url }}" alt="{{ product.name }}" class="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-500">
+                        
+                        <!-- بج تخفیف یا شخصی‌دوزی -->
+                        <div class="absolute top-2.5 right-2.5 flex flex-col gap-1.5">
+                            {% if product.has_discount %}
+                                <span class="bg-[#8E4A42] text-white text-[11px] font-medium px-2.5 py-1 rounded-full shadow-sm">
+                                    تخفیف ویژه
+                                </span>
+                            {% endif %}
+                            {% if product.allow_custom_measurements %}
+                                <span class="bg-white/90 backdrop-blur-sm text-espresso text-[10px] font-medium px-2.5 py-1 rounded-full border border-[#E8DDD3]">
+                                    قابلیت شخصی‌دوزی
+                                </span>
+                            {% endif %}
+                        </div>
+
+                        {% if product.total_stock == 0 %}
+                            <div class="absolute inset-0 bg-espresso/40 backdrop-blur-[1px] flex items-center justify-center">
+                                <span class="bg-white text-espresso text-xs font-bold px-3 py-1.5 rounded-full">
+                                    اتمام موجودی
+                                </span>
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- مشخصات و قیمت -->
+                    <div class="p-3.5 sm:p-4 flex flex-col flex-grow justify-between">
+                        <div>
+                            <p class="text-[11px] text-taupe mb-1">{{ product.category.name }}</p>
+                            <h3 class="text-sm sm:text-base font-semibold text-espresso line-clamp-1 group-hover:text-taupe transition">
+                                {{ product.name }}
+                            </h3>
+                            {% if product.fabric_details %}
+                                <p class="text-xs text-espresso/60 mt-1 line-clamp-1 font-light">
+                                    {{ product.fabric_details }}
+                                </p>
+                            {% endif %}
+                        </div>
+
+                        <div class="mt-3 pt-2.5 border-t border-[#F5EFEA] flex items-center justify-between">
+                            <span class="text-[11px] text-espresso/60">قیمت پایه:</span>
+                            <div class="text-left">
+                                {% if product.has_discount %}
+                                    <span class="block text-[11px] text-espresso/40 line-through">
+                                        {{ product.base_price|toman }}
+                                    </span>
+                                    <span class="text-sm sm:text-base font-bold text-[#8E4A42]">
+                                        {{ product.discount_price|toman }} <span class="text-[11px] font-normal">تومان</span>
+                                    </span>
+                                {% else %}
+                                    <span class="text-sm sm:text-base font-bold text-espresso">
+                                        {{ product.base_price|toman }} <span class="text-[11px] font-normal text-espresso/70">تومان</span>
+                                    </span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                </a>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="bg-white rounded-3xl border border-[#EFE8DF] p-12 text-center max-w-md mx-auto my-8">
+            <p class="text-espresso/70 text-base mb-4">محصولی در این بخش یافت نشد.</p>
+            <a href="{% url 'catalog:home' %}" class="inline-block bg-espresso text-white text-xs px-5 py-2.5 rounded-xl hover:bg-taupe transition">
+                مشاهده همه محصولات
+            </a>
+        </div>
+    {% endif %}
+
+</div>
+{% endblock %}

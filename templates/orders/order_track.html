@@ -1,0 +1,67 @@
+{% extends 'base.html' %}
+{% load price_filters %}
+
+{% block title %}پیگیری سفارش و تسویه حساب | {{ site_settings.site_name }}{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto px-4 py-10 sm:py-14 space-y-10">
+
+    <!-- باکس جستجوی سفارش با کد سفارش و موبایل -->
+    <div class="bg-white rounded-3xl p-6 sm:p-10 border border-[#EFE8DF] max-w-xl mx-auto">
+        <h1 class="text-xl sm:text-2xl font-bold text-espresso mb-2 text-center">پیگیری وضعیت سفارش</h1>
+        <p class="text-xs sm:text-sm text-espresso/70 text-center mb-6">
+            برای مشاهده وضعیت آماده‌سازی، کد رهگیری پستی یا تسویه مابقی حساب، کد سفارش و شماره موبایل خود را وارد کنید.
+        </p>
+
+        <form method="post" class="space-y-4">
+            {% csrf_token %}
+            <div>
+                <label class="block text-xs font-semibold text-espresso mb-1.5">کد سفارش (مثال: MN-482910)</label>
+                <input type="text" name="order_code" required placeholder="MN-..." dir="ltr"
+                       class="w-full bg-ivory border border-[#DFD3C7] rounded-xl px-4 py-3 text-sm text-center font-semibold focus:outline-none focus:border-taupe">
+            </div>
+
+            <div>
+                <label class="block text-xs font-semibold text-espresso mb-1.5">شماره موبایل ثبت‌شده در سفارش</label>
+                <input type="text" name="phone" required placeholder="09123456789" dir="ltr"
+                       class="w-full bg-ivory border border-[#DFD3C7] rounded-xl px-4 py-3 text-sm text-center font-semibold focus:outline-none focus:border-taupe">
+            </div>
+
+            <button type="submit" class="w-full bg-espresso text-white py-3.5 rounded-2xl text-sm font-bold hover:bg-taupe transition shadow-sm">
+                مشاهده وضعیت سفارش
+            </button>
+        </form>
+    </div>
+
+    <!-- نمایش خودکار سفارش‌های اخیر ثبت‌شده با همین گوشی/مرورگر -->
+    {% if recent_orders %}
+    <div class="max-w-2xl mx-auto space-y-4">
+        <h2 class="text-base font-bold text-espresso px-1">سفارش‌های اخیر شما در این دستگاه:</h2>
+        {% for ord in recent_orders %}
+        <a href="{% url 'orders:order_summary' ord.access_token %}"
+           class="block bg-white rounded-2xl p-5 border border-[#EFE8DF] hover:border-taupe transition shadow-xs">
+            <div class="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-[#F5EFEA]">
+                <div>
+                    <span class="text-sm font-bold text-espresso" dir="ltr">{{ ord.order_code }}</span>
+                    <span class="text-xs text-espresso/60 mr-2">({{ ord.full_name }})</span>
+                </div>
+                <span class="text-xs font-semibold px-3 py-1 rounded-full bg-sand text-espresso">
+                    {{ ord.get_status_display }}
+                </span>
+            </div>
+
+            <div class="mt-3 flex items-center justify-between text-xs text-espresso/80">
+                <span>مبلغ کل: <strong>{{ ord.total_amount|toman }} تومان</strong></span>
+                {% if ord.remaining_amount > 0 and ord.status == 'partially_paid' %}
+                    <span class="text-[#8E4A42] font-bold">مانده جهت تسویه: {{ ord.remaining_amount|toman }} تومان ←</span>
+                {% else %}
+                    <span class="text-taupe font-medium">مشاهده جزئیات و پیگیری ←</span>
+                {% endif %}
+            </div>
+        </a>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+</div>
+{% endblock %}

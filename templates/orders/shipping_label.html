@@ -1,0 +1,103 @@
+{% load price_filters %}
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>برچسب پستی سفارش {{ order.order_code }}</title>
+    <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Vazirmatn', sans-serif; background: #f5f5f5; padding: 20px; color: #111; }
+        .sheet { max-width: 700px; margin: 0 auto; background: #fff; border: 2px solid #000; border-radius: 12px; padding: 24px; }
+        .box { border: 1.5px solid #222; border-radius: 8px; padding: 14px; margin-bottom: 16px; }
+        .row { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 14px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 13px; }
+        th, td { border: 1px solid #333; padding: 8px; text-align: right; }
+        th { background: #eee; }
+        @media print {
+            body { background: #fff; padding: 0; }
+            .no-print { display: none !important; }
+            .sheet { border: 2px solid #000; width: 100%; max-width: 100%; }
+        }
+    </style>
+</head>
+<body>
+    <div class="no-print" style="max-width: 700px; margin: 0 auto 15px; text-align: left;">
+        <button onclick="window.print()" style="background: #2A211D; color: #fff; border: none; padding: 10px 22px; border-radius: 8px; font-family: inherit; font-weight: bold; cursor: pointer;">
+            🖨️ چاپ برچسب پستی و برگه سفارش
+        </button>
+    </div>
+
+    <div class="sheet">
+        <div class="row" style="border-bottom: 2px solid #000; padding-bottom: 10px; margin-bottom: 16px;">
+            <div>
+                <strong style="font-size: 18px;">فرستنده: {{ site_settings.site_name }}</strong>
+                {% if site_settings.phone_number %}<div>تلفن: {{ site_settings.phone_number|fa_digits }}</div>{% endif %}
+                {% if site_settings.address %}<div style="font-size: 12px;">آدرس: {{ site_settings.address }}</div>{% endif %}
+            </div>
+            <div style="text-align: left;">
+                <strong style="font-size: 18px;" dir="ltr">{{ order.order_code }}</strong>
+                <div>تاریخ: {{ order.created_at|date:"Y/m/d"|fa_digits }}</div>
+            </div>
+        </div>
+
+        <!-- کادر گیرنده (جهت الصاق روی بسته پستی) -->
+        <div class="box">
+            <div style="font-size: 16px; font-weight: bold; margin-bottom: 8px;">گیرنده: {{ order.full_name }}</div>
+            <div style="font-size: 15px; margin-bottom: 6px;">
+                <strong>استان و شهر:</strong> {{ order.province }} - {{ order.city }}
+            </div>
+            <div style="font-size: 14px; line-height: 1.7; margin-bottom: 8px;">
+                <strong>آدرس پستی:</strong> {{ order.address|fa_digits }}
+            </div>
+            <div class="row" style="margin-bottom: 0; pt: 6px;">
+                <span><strong>شماره تماس:</strong> <span dir="ltr">{{ order.phone|fa_digits }}</span></span>
+                {% if order.postal_code %}
+                <span><strong>کد پستی:</strong> <span dir="ltr">{{ order.postal_code|fa_digits }}</span></span>
+                {% endif %}
+            </div>
+            {% if order.customer_note %}
+            <div style="margin-top: 8px; padding-top: 8px; border-top: 1px dashed #999; font-size: 12px;">
+                <strong>توضیحات مشتری:</strong> {{ order.customer_note|fa_digits }}
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- جدول اقلام و اندازه‌های شخصی‌دوزی (مخصوص کارگاه خیاطی و بسته‌بندی) -->
+        <div>
+            <strong>اقلام سفارش و مشخصات دوخت:</strong>
+            <table>
+                <thead>
+                    <tr>
+                        <th>نام لباس</th>
+                        <th>سایز</th>
+                        <th>تعداد</th>
+                        <th>اندازه‌های شخصی‌دوزی مشتری</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in order.items.all %}
+                    <tr>
+                        <td>{{ item.product_name }}</td>
+                        <td><strong>{{ item.size_title|fa_digits }}</strong></td>
+                        <td>{{ item.quantity|fa_digits }}</td>
+                        <td>{{ item.custom_measurements|default:"— (سایز استاندارد)"|fa_digits }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <div class="row" style="margin-top: 16px; padding-top: 10px; border-top: 1px solid #ccc;">
+            <span>وضعیت مالی: <strong>{{ order.get_status_display }}</strong></span>
+            <span>
+                پرداخت‌شده: {{ order.paid_amount|toman }} ت |
+                {% if order.remaining_amount > 0 %}
+                    <strong>مانده تسویه قبل از ارسال: {{ order.remaining_amount|toman }} تومان</strong>
+                {% else %}
+                    <strong>تسویه کامل (۰ تومان مانده)</strong>
+                {% endif %}
+            </span>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,100 @@
+{% extends 'base.html' %}
+{% load price_filters %}
+
+{% block title %}جزئیات و وضعیت سفارش {{ order.order_code }} | {{ site_settings.site_name }}{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto px-4 py-10">
+    <div class="bg-white rounded-3xl p-6 sm:p-8 border border-[#EFE8DF] space-y-6">
+        
+        <div class="flex flex-wrap items-center justify-between gap-3 border-b border-[#F5EFEA] pb-4">
+            <div>
+                <span class="text-xs text-taupe block">شناسنامه و وضعیت سفارش</span>
+                <h1 class="text-lg sm:text-xl font-bold text-espresso mt-0.5">کد سفارش: <span dir="ltr">{{ order.order_code }}</span></h1>
+            </div>
+            <span class="bg-sand text-espresso text-xs font-semibold px-3.5 py-1.5 rounded-full border border-[#E2D5C8]">
+                {{ order.get_status_display }}
+            </span>
+        </div>
+
+        <!-- نمایش کد رهگیری پستی در صورت ارسال شدن -->
+        {% if order.tracking_code %}
+        <div class="bg-emerald-50 border border-emerald-200 rounded-2xl p-4 flex items-center justify-between">
+            <div>
+                <span class="text-xs text-emerald-800 block font-medium">سفارش شما تحویل پست/تیپاکس شده است.</span>
+                <span class="text-sm font-bold text-emerald-950 mt-1 block">کد رهگیری مرسوله: <span dir="ltr">{{ order.tracking_code|fa_digits }}</span></span>
+            </div>
+            <a href="https://tracking.post.ir/" target="_blank" rel="noopener" class="bg-emerald-800 text-white text-xs px-3.5 py-2 rounded-xl hover:bg-emerald-700 transition">
+                سایت رهگیری پست
+            </a>
+        </div>
+        {% endif %}
+
+        <!-- اقلام سفارش -->
+        <div class="space-y-3">
+            <h2 class="text-xs font-bold text-espresso/70">اقلام ثبت شده در این سفارش:</h2>
+            {% for item in order.items.all %}
+            <div class="bg-ivory rounded-2xl p-3.5 border border-[#EFE8DF] text-xs sm:text-sm">
+                <div class="flex justify-between font-semibold text-espresso">
+                    <span>{{ item.product_name }} (سایز {{ item.size_title|fa_digits }}) × {{ item.quantity|fa_digits }}</span>
+                    <span>{{ item.get_total_price|toman }} تومان</span>
+                </div>
+                {% if item.custom_measurements %}
+                <p class="text-xs text-taupe mt-1.5">اندازه‌های شخصی‌دوزی: {{ item.custom_measurements|fa_digits }}</p>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- جزییات مالی -->
+        <div class="bg-sand/60 rounded-2xl p-4 space-y-2.5 text-xs sm:text-sm">
+            <div class="flex justify-between">
+                <span>تحویل‌گیرنده:</span>
+                <span class="font-medium">{{ order.full_name }} ({{ order.city }})</span>
+            </div>
+            <div class="flex justify-between">
+                <span>مبلغ کل فاکتور (با احتساب ارسال):</span>
+                <span class="font-semibold">{{ order.total_amount|toman }} تومان</span>
+            </div>
+            <div class="flex justify-between">
+                <span>مبلغ پرداخت‌شده تا این لحظه:</span>
+                <span class="font-bold text-emerald-700">{{ order.paid_amount|toman }} تومان</span>
+            </div>
+
+            {% if order.status == 'pending' %}
+                <div class="flex justify-between text-base font-bold text-espresso pt-2 border-t border-[#E2D5C8]">
+                    <span>مبلغ قابل پرداخت هم‌اکنون:</span>
+                    <span class="text-taupe">{{ order.payable_now|toman }} تومان</span>
+                </div>
+            {% elif order.remaining_amount > 0 %}
+                <div class="flex justify-between text-base font-bold text-[#8E4A42] pt-2 border-t border-[#E2D5C8]">
+                    <span>مانده حساب جهت تسویه نهایی:</span>
+                    <span>{{ order.remaining_amount|toman }} تومان</span>
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- دکمه‌های پرداخت مرحله اول یا تسویه مرحله دوم -->
+        <div class="pt-2 space-y-3">
+            {% if order.status == 'pending' %}
+                <a href="{% url 'payments:start_payment' order.access_token %}" class="block w-full bg-espresso text-white text-center py-4 rounded-2xl text-sm font-bold hover:bg-taupe transition shadow-sm">
+                    پرداخت امن آنلاین ({{ order.payable_now|toman }} تومان) با زرین‌پال
+                </a>
+            {% elif order.status == 'partially_paid' and order.remaining_amount > 0 %}
+                <a href="{% url 'payments:start_payment' order.access_token %}" class="block w-full bg-[#8E4A42] text-white text-center py-4 rounded-2xl text-sm font-bold hover:bg-espresso transition shadow-sm">
+                    تسویه مابقی حساب ({{ order.remaining_amount|toman }} تومان) با زرین‌پال
+                </a>
+            {% endif %}
+
+            {% if site_settings.whatsapp_number %}
+                <a href="https://wa.me/{{ site_settings.whatsapp_number }}?text={{ 'سلام، درباره سفارش شماره '|urlencode }}{{ order.order_code|urlencode }}{{ ' سوال داشتم.'|urlencode }}"
+                   target="_blank" rel="noopener"
+                   class="block w-full border border-[#DFD3C7] text-espresso text-center py-3.5 rounded-2xl text-xs sm:text-sm font-medium hover:bg-sand transition">
+                    ارتباط با پشتیبانی واتساپ درباره این سفارش
+                </a>
+            {% endif %}
+        </div>
+
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,137 @@
+{% extends 'base.html' %}
+{% load price_filters %}
+
+{% block title %}تکمیل اطلاعات و پرداخت | {{ site_settings.site_name }}{% endblock %}
+
+{% block content %}
+<div class="max-w-5xl mx-auto px-4 py-8 sm:py-12"
+     x-data="{ paymentType: '{{ form.payment_type.value|default:'full' }}' }">
+
+    <h1 class="text-xl sm:text-2xl font-bold text-espresso mb-6">تکمیل اطلاعات ارسال و نحوه پرداخت</h1>
+
+    <form method="post" class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+        {% csrf_token %}
+
+        <!-- ستون راست: مشخصات و آدرس پستی (۷ ستون) -->
+        <div class="lg:col-span-7 bg-white rounded-3xl p-5 sm:p-8 border border-[#EFE8DF] space-y-5">
+            <h2 class="text-base font-bold text-espresso pb-3 border-b border-[#F5EFEA]">۱. مشخصات تحویل‌گیرنده</h2>
+
+            {% if form.errors %}
+            <div class="bg-red-50 border border-red-200 text-red-700 text-xs rounded-2xl p-4 space-y-1">
+                <p class="font-bold">لطفاً موارد زیر را بررسی فرمایید:</p>
+                {% for field in form %}
+                    {% for error in field.errors %}
+                        <p>• {{ field.label }}: {{ error }}</p>
+                    {% endfor %}
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-xs font-semibold text-espresso mb-1.5">نام و نام خانوادگی *</label>
+                    {{ form.full_name }}
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-espresso mb-1.5">شماره موبایل (جهت هماهنگی ارسال) *</label>
+                    {{ form.phone }}
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-xs font-semibold text-espresso mb-1.5">استان *</label>
+                    {{ form.province }}
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-espresso mb-1.5">شهر *</label>
+                    {{ form.city }}
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-xs font-semibold text-espresso mb-1.5">آدرس دقیق پستی *</label>
+                {{ form.address }}
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-xs font-semibold text-espresso mb-1.5">کد پستی (اختیاری)</label>
+                    {{ form.postal_code }}
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-espresso mb-1.5">توضیحات تکمیلی (اختیاری)</label>
+                    {{ form.customer_note }}
+                </div>
+            </div>
+        </div>
+
+        <!-- ستون چپ: انتخاب شیوه پرداخت و تایید نهایی (۵ ستون) -->
+        <div class="lg:col-span-5 space-y-6">
+            <div class="bg-white rounded-3xl p-5 sm:p-6 border border-[#EFE8DF] space-y-5">
+                <h2 class="text-base font-bold text-espresso pb-3 border-b border-[#F5EFEA]">۲. انتخاب روش پرداخت</h2>
+
+                {% if site_settings.enable_two_stage_payment %}
+                <div class="space-y-3">
+                    <!-- گزینه ۱: پرداخت کامل -->
+                    <label class="block cursor-pointer">
+                        <input type="radio" name="payment_type" value="full" x-model="paymentType" class="peer sr-only">
+                        <div class="p-4 rounded-2xl border transition peer-checked:border-espresso peer-checked:bg-ivory border-[#E8DDD3]">
+                            <div class="flex items-center justify-between">
+                                <span class="text-sm font-bold text-espresso">پرداخت کامل یکجا</span>
+                                <span class="text-sm font-bold text-espresso">{{ cart.get_grand_total|toman }} تومان</span>
+                            </div>
+                            <p class="text-xs text-espresso/60 mt-1">تسویه کامل سفارش و ارسال مستقیم پس از آماده‌سازی</p>
+                        </div>
+                    </label>
+
+                    <!-- گزینه ۲: پرداخت دومرحله‌ای (بیعانه) -->
+                    <label class="block cursor-pointer">
+                        <input type="radio" name="payment_type" value="deposit" x-model="paymentType" class="peer sr-only">
+                        <div class="p-4 rounded-2xl border transition peer-checked:border-espresso peer-checked:bg-ivory border-[#E8DDD3]">
+                            <div class="flex items-center justify-between">
+                                <span class="text-sm font-bold text-espresso">پرداخت دومرحله‌ای ({{ site_settings.deposit_percentage|fa_digits }}٪ پیش‌پرداخت)</span>
+                                <span class="text-sm font-bold text-taupe">{{ cart.get_deposit_payable|toman }} تومان</span>
+                            </div>
+                            <p class="text-xs text-espresso/60 mt-1">
+                                پرداخت {{ site_settings.deposit_percentage|fa_digits }}٪ مبلغ الان جهت ثبت و شروع دوخت، و تسویه مابقی قبل از ارسال
+                            </p>
+                        </div>
+                    </label>
+                </div>
+                {% else %}
+                    <input type="hidden" name="payment_type" value="full">
+                {% endif %}
+
+                <!-- خلاصه مبالغ -->
+                <div class="bg-sand/60 rounded-2xl p-4 space-y-2.5 text-xs sm:text-sm">
+                    <div class="flex justify-between text-espresso/75">
+                        <span>جمع اقلام سفارش:</span>
+                        <span>{{ cart.get_items_total|toman }} تومان</span>
+                    </div>
+                    <div class="flex justify-between text-espresso/75">
+                        <span>هزینه بسته‌بندی و ارسال:</span>
+                        <span>{{ cart.get_shipping_cost|toman }} تومان</span>
+                    </div>
+                    <div class="flex justify-between text-espresso font-medium pt-2 border-t border-[#E2D5C8]">
+                        <span>مبلغ کل فاکتور:</span>
+                        <span>{{ cart.get_grand_total|toman }} تومان</span>
+                    </div>
+
+                    <!-- مبلغ قابل پرداخت لحظه‌ای در درگاه -->
+                    <div class="flex justify-between items-center pt-2 border-t border-[#E2D5C8] text-espresso font-bold text-base">
+                        <span>مبلغ قابل پرداخت در درگاه:</span>
+                        <span x-show="paymentType === 'full'">{{ cart.get_grand_total|toman }} تومان</span>
+                        <span x-show="paymentType === 'deposit'" x-cloak class="text-taupe">{{ cart.get_deposit_payable|toman }} تومان</span>
+                    </div>
+                </div>
+
+                <button type="submit" class="w-full bg-espresso text-white py-4 rounded-2xl text-sm font-bold hover:bg-taupe transition shadow-sm">
+                    ثبت سفارش و انتقال به درگاه زرین‌پال
+                </button>
+            </div>
+        </div>
+
+    </form>
+</div>
+{% endblock %}

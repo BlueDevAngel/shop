@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+{% load price_filters %}
+
+{% block title %}قوانین و درباره ما | {{ site_settings.site_name }}{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto px-4 py-10 sm:py-14 space-y-8">
+    
+    <!-- درباره ما -->
+    <section class="bg-white rounded-3xl p-6 sm:p-10 border border-[#EFE8DF]">
+        <h1 class="text-xl sm:text-2xl font-bold text-espresso mb-4 pb-3 border-b border-[#F5EFEA]">
+            درباره {{ site_settings.site_name }}
+        </h1>
+        <div class="text-sm sm:text-base text-espresso/80 leading-relaxed whitespace-pre-line font-light">
+            {{ site_settings.about_us|fa_digits }}
+        </div>
+    </section>
+
+    <!-- قوانین و شرایط خرید -->
+    <section class="bg-white rounded-3xl p-6 sm:p-10 border border-[#EFE8DF]">
+        <h2 class="text-xl sm:text-2xl font-bold text-espresso mb-4 pb-3 border-b border-[#F5EFEA]">
+            قوانین و شرایط ثبت سفارش
+        </h2>
+        <div class="text-sm sm:text-base text-espresso/80 leading-relaxed whitespace-pre-line font-light">
+            {{ site_settings.terms_and_conditions|fa_digits }}
+        </div>
+    </section>
+
+</div>
+{% endblock %}

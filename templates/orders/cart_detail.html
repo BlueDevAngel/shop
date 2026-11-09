@@ -1,0 +1,127 @@
+{% extends 'base.html' %}
+{% load price_filters %}
+
+{% block title %}سبد خرید | {{ site_settings.site_name }}{% endblock %}
+
+{% block content %}
+<div class="max-w-5xl mx-auto px-4 py-8 sm:py-12">
+    <h1 class="text-xl sm:text-2xl font-bold text-espresso mb-6">سبد خرید شما</h1>
+
+    {% if cart|length > 0 %}
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+        
+        <!-- لیست اقلام سبد خرید (۸ ستون) -->
+        <div class="lg:col-span-8 space-y-4">
+            {% for item in cart %}
+            <div class="bg-white rounded-2xl p-4 sm:p-5 border border-[#EFE8DF] flex gap-4 items-start">
+                <a href="{% url 'catalog:product_detail' item.product.slug %}" class="w-20 h-28 sm:w-24 sm:h-32 rounded-xl overflow-hidden bg-sand flex-shrink-0 border border-[#E8DDD3]">
+                    <img src="{{ item.product.main_image.url }}" alt="{{ item.product.name }}" class="w-full h-full object-cover">
+                </a>
+
+                <div class="flex-1 min-w-0">
+                    <div class="flex items-start justify-between gap-2">
+                        <div>
+                            <a href="{% url 'catalog:product_detail' item.product.slug %}" class="text-sm sm:text-base font-bold text-espresso hover:text-taupe transition">
+                                {{ item.product.name }}
+                            </a>
+                            <span class="block text-xs text-taupe mt-1">
+                                سایز انتخابی: <strong>{{ item.variant.size_title|fa_digits }}</strong>
+                            </span>
+                        </div>
+
+                        <form method="post" action="{% url 'orders:cart_remove' item.item_key %}">
+                            {% csrf_token %}
+                            <button type="submit" class="text-xs text-espresso/40 hover:text-red-600 transition p-1" title="حذف از سبد">
+                                ✕
+                            </button>
+                        </form>
+                    </div>
+
+                    {% if item.custom_measurements %}
+                    <div class="mt-2.5 bg-sand/60 border border-[#E2D5C8] rounded-xl p-2.5 text-xs text-espresso/85">
+                        <span class="font-semibold text-taupe block mb-0.5">اندازه‌های شخصی‌دوزی ثبت‌شده:</span>
+                        {{ item.custom_measurements|fa_digits }}
+                    </div>
+                    {% endif %}
+
+                    <div class="mt-4 pt-3 border-t border-[#F5EFEA] flex flex-wrap items-center justify-between gap-3">
+                        <!-- تغییر تعداد -->
+                        <form method="post" action="{% url 'orders:cart_update' item.item_key %}" class="flex items-center gap-1.5">
+                            {% csrf_token %}
+                            <label class="text-xs text-espresso/60 ml-1">تعداد:</label>
+                            <select name="quantity" onchange="this.form.submit()" class="bg-ivory border border-[#DFD3C7] rounded-lg px-2.5 py-1 text-xs font-medium text-espresso focus:outline-none">
+                                {% for i in "12345" %}
+                                    {% if forloop.counter <= item.variant.stock %}
+                                    <option value="{{ forloop.counter }}" {% if item.quantity == forloop.counter %}selected{% endif %}>
+                                        {{ forloop.counter|fa_digits }}
+                                    </option>
+                                    {% endif %}
+                                {% endfor %}
+                            </select>
+                        </form>
+
+                        <!-- قیمت ردیف -->
+                        <div class="text-left">
+                            <span class="text-sm sm:text-base font-bold text-espresso">
+                                {{ item.total_price|toman }}
+                            </span>
+                            <span class="text-xs text-espresso/70">تومان</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- خلاصه صورتحساب (۴ ستون) -->
+        <div class="lg:col-span-4">
+            <div class="bg-white rounded-3xl p-6 border border-[#EFE8DF] sticky top-24 space-y-4">
+                <h2 class="text-base font-bold text-espresso pb-3 border-b border-[#F5EFEA]">خلاصه صورتحساب</h2>
+
+                <div class="space-y-2.5 text-sm">
+                    <div class="flex justify-between text-espresso/80">
+                        <span>جمع کل لباس‌ها ({{ cart|length|fa_digits }} عدد):</span>
+                        <span>{{ cart.get_items_total|toman }} تومان</span>
+                    </div>
+                    <div class="flex justify-between text-espresso/80">
+                        <span>هزینه ارسال:</span>
+                        {% if cart.get_shipping_cost == 0 %}
+                            <span class="text-emerald-700 font-medium">رایگان</span>
+                        {% else %}
+                            <span>{{ cart.get_shipping_cost|toman }} تومان</span>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="pt-3 border-t border-[#EFE8DF] flex justify-between items-center">
+                    <span class="text-sm font-bold text-espresso">مبلغ کل سفارش:</span>
+                    <span class="text-lg font-bold text-espresso">{{ cart.get_grand_total|toman }} <span class="text-xs font-normal">تومان</span></span>
+                </div>
+
+                {% if site_settings.enable_two_stage_payment %}
+                <div class="bg-[#F4ECE6] rounded-2xl p-3.5 text-xs text-espresso/85 leading-relaxed">
+                    <span class="font-bold text-taupe block mb-1">قابلیت پرداخت دومرحله‌ای فعال است:</span>
+                    در مرحله بعد می‌توانید کل مبلغ را تسویه کنید یا فقط <strong>{{ cart.get_deposit_payable|toman }} تومان</strong> ({{ site_settings.deposit_percentage|fa_digits }}٪ بیعانه + ارسال) را الان بپردازید.
+                </div>
+                {% endif %}
+
+                <a href="{% url 'orders:checkout' %}" class="block w-full bg-espresso text-white text-center py-3.5 rounded-2xl text-sm font-semibold hover:bg-taupe transition shadow-sm">
+                    ادامه جهت ثبت آدرس و پرداخت
+                </a>
+                <a href="{% url 'catalog:home' %}" class="block w-full text-center text-xs text-espresso/60 hover:text-espresso py-1">
+                    بازگشت به ویترین فروشگاه
+                </a>
+            </div>
+        </div>
+
+    </div>
+    {% else %}
+    <div class="bg-white rounded-3xl border border-[#EFE8DF] p-12 text-center max-w-md mx-auto">
+        <p class="text-espresso/70 mb-5">سبد خرید شما در حال حاضر خالی است.</p>
+        <a href="{% url 'catalog:home' %}" class="inline-block bg-espresso text-white text-xs sm:text-sm px-6 py-3 rounded-2xl hover:bg-taupe transition">
+            مشاهده محصولات فروشگاه
+        </a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

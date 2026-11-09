@@ -1,0 +1,226 @@
+{% load price_filters %}
+<!DOCTYPE html>
+<html lang="fa" dir="rtl" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}{{ site_settings.site_name }}{% if site_settings.tagline %} | {{ site_settings.tagline }}{% endif %}{% endblock %}</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Vazirmatn', 'sans-serif'],
+                    },
+                    colors: {
+                        ivory: '#FAF7F2',
+                        sand: '#F3ECE4',
+                        taupe: '#8C6D58',
+                        espresso: '#2A211D',
+                        blush: '#E8D5C8',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        [x-cloak] { display: none !important; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+</head>
+<body class="bg-ivory text-espresso font-sans antialiased selection:bg-blush selection:text-espresso min-h-screen flex flex-col">
+
+    <!-- ۱. نوار اعلان بالای سایت -->
+    {% if site_settings.announcement_bar %}
+    <div class="bg-espresso text-[#F5EBE6] text-xs sm:text-sm py-2.5 px-4 text-center tracking-wide font-light">
+        {{ site_settings.announcement_bar|fa_digits }}
+    </div>
+    {% endif %}
+
+    <!-- ۲. هدر مینیمال -->
+    <header class="sticky top-0 z-40 bg-ivory/90 backdrop-blur-md border-b border-[#E8DDD3]" x-data="{ searchOpen: false }">
+        <div class="max-w-6xl mx-auto px-4 h-16 sm:h-20 flex items-center justify-between">
+            
+            <!-- سمت راست: جستجو و قوانین -->
+            <div class="flex items-center gap-2 sm:gap-4 w-1/3">
+                <button @click="searchOpen = !searchOpen" class="p-2 text-espresso/80 hover:text-espresso transition rounded-full hover:bg-sand" aria-label="جستجو">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.7">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
+                    </svg>
+                </button>
+                <a href="{% url 'core:rules' %}" class="hidden sm:inline-block text-xs text-espresso/75 hover:text-espresso transition">
+                    قوانین و راهنما
+                </a>
+            </div>
+
+            <!-- مرکز: لوگو یا نام برند -->
+            <!-- مرکز: لوگو یا نام برند -->
+            <div class="text-center w-1/3">
+                <a href="{% url 'catalog:home' %}" class="inline-flex items-center justify-center gap-2.5 group">
+                    {% if site_settings.logo %}
+                        <img src="{{ site_settings.logo.url }}" alt="{{ site_settings.site_name }}" 
+                             class="w-10 h-10 sm:w-11 sm:h-11 rounded-full object-cover object-top border border-taupe/50 shadow-xs flex-shrink-0">
+                    {% endif %}
+                    <div class="flex flex-col items-center sm:items-start">
+                        <span class="text-base sm:text-xl font-bold tracking-tight text-espresso group-hover:text-taupe transition line-clamp-1">
+                            {{ site_settings.site_name }}
+                        </span>
+                        {% if site_settings.tagline %}
+                            <span class="text-[10px] text-taupe font-light hidden sm:block">
+                                {{ site_settings.tagline }}
+                            </span>
+                        {% endif %}
+                    </div>
+                </a>
+            </div>
+
+            <!-- سمت چپ: پیگیری سفارش و سبد خرید -->
+            <div class="flex items-center justify-end gap-2 sm:gap-3 w-1/3">
+                <a href="{% url 'orders:order_track' %}" class="inline-flex items-center gap-1.5 text-xs font-medium text-espresso bg-sand/90 hover:bg-[#E8DDD3] px-3 py-2 rounded-full transition" title="پیگیری سفارش و تسویه حساب">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-taupe" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 002.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 00-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 00.75-.75 2.25 2.25 0 00-.1-.664m-5.8 0A2.251 2.251 0 0113.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25z" />
+                    </svg>
+                    <span class="hidden md:inline">پیگیری سفارش</span>
+                </a>
+
+                <a href="{% url 'orders:cart_detail' %}" class="relative p-2 text-espresso/80 hover:text-espresso transition rounded-full hover:bg-sand" aria-label="سبد خرید">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.7">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 10.5V6a3.75 3.75 0 10-7.5 0v4.5m11.356-1.993l1.263 12c.07.665-.45 1.243-1.119 1.243H4.25a1.125 1.125 0 01-1.12-1.243l1.264-12A1.125 1.125 0 015.513 7.5h12.974c.576 0 1.059.435 1.119 1.007zM8.625 10.5a.375.375 0 11-.75 0 .375.375 0 01.75 0zm7.5 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
+                    </svg>
+                    <span class="absolute -top-0.5 -right-0.5 bg-taupe text-white text-[10px] w-4 h-4 rounded-full flex items-center justify-center">
+                        {{ cart|length|default:0|fa_digits }}
+                    </span>
+                </a>
+            </div>
+        </div>
+
+        <!-- نوار جستجوی بازشونده -->
+        <div x-show="searchOpen" x-cloak x-transition class="border-t border-[#E8DDD3] bg-sand/70 px-4 py-3">
+            <form action="{% url 'catalog:home' %}" method="get" class="max-w-xl mx-auto flex gap-2">
+                <input type="text" name="q" value="{{ search_query }}" placeholder="جستجوی نام لباس، جنس پارچه یا کد محصول..." 
+                       class="w-full bg-white border border-[#DFD3C7] rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-taupe">
+                <button type="submit" class="bg-espresso text-white px-5 py-2 rounded-xl text-sm hover:bg-taupe transition">
+                    جستجو
+                </button>
+            </form>
+        </div>
+    </header>
+
+    <!-- پیام‌های سیستم -->
+    {% if messages %}
+    <div class="max-w-6xl mx-auto px-4 pt-4 space-y-2 w-full">
+        {% for message in messages %}
+        <div class="bg-espresso text-ivory text-xs sm:text-sm px-4 py-3 rounded-2xl flex items-center justify-between shadow-sm">
+            <span>{{ message }}</span>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- ۳. محتوای اصلی -->
+    <main class="flex-grow">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- ۴. فوتر پویا به همراه جایگاه اینماد -->
+    <footer class="bg-sand/80 border-t border-[#E8DDD3] mt-16">
+        <div class="max-w-6xl mx-auto px-4 py-10 sm:py-12">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-8 text-sm">
+                
+                <!-- درباره برند -->
+                <div>
+                    <h3 class="font-bold text-base text-espresso mb-2">{{ site_settings.site_name }}</h3>
+                    {% if site_settings.tagline %}
+                        <p class="text-espresso/75 leading-relaxed mb-3">{{ site_settings.tagline }}</p>
+                    {% endif %}
+                    {% if site_settings.address %}
+                        <p class="text-xs text-espresso/60 leading-relaxed">{{ site_settings.address }}</p>
+                    {% endif %}
+                </div>
+
+                <!-- دسترسی سریع -->
+                <div>
+                    <h4 class="font-semibold text-espresso mb-3">دسترسی سریع</h4>
+                    <ul class="space-y-2 text-xs sm:text-sm text-espresso/80">
+                        <li><a href="{% url 'orders:order_track' %}" class="hover:text-taupe transition">پیگیری وضعیت سفارش</a></li>
+                        <li><a href="{% url 'core:rules' %}" class="hover:text-taupe transition">قوانین و شرایط ثبت سفارش</a></li>
+                        <li><a href="{% url 'core:rules' %}" class="hover:text-taupe transition">درباره {{ site_settings.site_name }}</a></li>
+                    </ul>
+                </div>
+
+                <!-- راه‌های ارتباطی -->
+                <div>
+                    <h4 class="font-semibold text-espresso mb-3">ارتباط با ما</h4>
+                    <div class="flex flex-col space-y-2.5 text-xs sm:text-sm">
+                        {% if site_settings.instagram_id %}
+                            <a href="https://instagram.com/{{ site_settings.instagram_id }}" target="_blank" rel="noopener" class="inline-flex items-center gap-2 text-espresso/80 hover:text-taupe transition">
+                                <span>اینستاگرام:</span>
+                                <span dir="ltr" class="font-medium">@{{ site_settings.instagram_id }}</span>
+                            </a>
+                        {% endif %}
+                        {% if site_settings.whatsapp_number %}
+                            <a href="https://wa.me/{{ site_settings.whatsapp_number }}" target="_blank" rel="noopener" class="inline-flex items-center gap-2 text-espresso/80 hover:text-taupe transition">
+                                <span>پشتیبانی و ثبت سفارش واتساپ</span>
+                            </a>
+                        {% endif %}
+                        {% if site_settings.phone_number %}
+                            <a href="tel:{{ site_settings.phone_number }}" class="inline-flex items-center gap-2 text-espresso/80 hover:text-taupe transition">
+                                <span>تلفن تماس:</span>
+                                <span dir="ltr">{{ site_settings.phone_number|fa_digits }}</span>
+                            </a>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- نماد اعتماد الکترونیکی (اینماد) -->
+                <div class="flex flex-col items-start md:items-center justify-center">
+                    {% if site_settings.enamad_html_code %}
+                        <div class="bg-white p-3 rounded-2xl border border-[#E8DDD3]">
+                            {{ site_settings.enamad_html_code|safe }}
+                        </div>
+                    {% else %}
+                        <div class="bg-white/60 border border-dashed border-[#D5C3B5] rounded-2xl p-4 text-center text-xs text-espresso/50 w-32 h-32 flex items-center justify-center">
+                            جایگاه نماد اعتماد (اینماد)
+                        </div>
+                    {% endif %}
+                </div>
+
+            </div>
+
+            <div class="border-t border-[#DFD3C7] mt-8 pt-6 text-center text-xs text-espresso/50">
+                تمامی حقوق برای {{ site_settings.site_name }} محفوظ است.
+            </div>
+        </div>
+    </footer>
+<!-- ۵. دکمه شناور ارتباط مستقیم با واتساپ مدیر (پویا از تنظیمات پنل ادمین) -->
+    {% if site_settings.whatsapp_number %}
+    <a href="https://wa.me/{{ site_settings.whatsapp_number }}?text={{ 'سلام وقت بخیر، از طریق وب‌سایت '|urlencode }}{{ site_settings.site_name|urlencode }}{{ ' برای مشاوره و سفارش پیام می‌دهم.'|urlencode }}"
+       target="_blank"
+       rel="noopener noreferrer"
+       aria-label="پشتیبانی واتساپ"
+       class="fixed bottom-5 left-5 z-50 group flex items-center gap-2.5 bg-white text-espresso p-1.5 sm:pl-4 sm:pr-1.5 sm:py-1.5 rounded-full shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300 border-2 border-white">
+        
+        <!-- موج ظریف جلب توجه -->
+        <span class="absolute -inset-0.5 rounded-full bg-[#25D366] opacity-30 blur-xs group-hover:opacity-60 transition"></span>
+        
+        <!-- آیکون رسمی واتساپ (لوگوی اصلی دو رنگ) -->
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" class="w-9 h-9 sm:w-10 sm:h-10 relative flex-shrink-0">
+            <path fill="#25D366" d="M16 0C7.163 0 0 7.163 0 16c0 2.837.737 5.5 2.03 7.82L0 32l8.413-2.206A15.93 15.93 0 0016 32c8.837 0 16-7.163 16-16S24.837 0 16 0z"/>
+            <path fill="#FFF" d="M23.47 19.14c-.36-.18-2.14-1.06-2.47-1.18-.33-.12-.57-.18-.81.18-.24.36-.93 1.18-1.14 1.42-.21.24-.42.27-.78.09-.36-.18-1.52-.56-2.9-1.79-1.07-.95-1.8-2.13-2.01-2.49-.21-.36-.02-.55.16-.73.16-.16.36-.42.54-.63.18-.21.24-.36.36-.6.12-.24.06-.45-.03-.63-.09-.18-.81-1.95-1.11-2.67-.29-.7-.59-.6-.81-.61-.21-.01-.45-.01-.69-.01s-.63.09-.96.45c-.33.36-1.26 1.23-1.26 3s1.29 3.48 1.47 3.72c.18.24 2.54 3.88 6.16 5.44.86.37 1.53.59 2.05.76.86.27 1.64.23 2.26.14.69-.1 2.14-.87 2.44-1.72.3-.85.3-1.57.21-1.72-.09-.15-.33-.24-.69-.42z"/>
+        </svg>
+
+        <!-- متن کنار آیکون (نمایش در دسکتاپ و تبلت، جمع‌وجور در موبایل) -->
+        <span class="relative text-xs font-bold hidden sm:inline">مشاوره در واتساپ</span>
+    </a>
+    {% endif %}
+</body>
+</html>

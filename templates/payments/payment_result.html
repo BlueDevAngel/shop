@@ -1,0 +1,97 @@
+{% extends 'base.html' %}
+{% load price_filters %}
+
+{% block title %}وضعیت پرداخت سفارش {{ order.order_code }} | {{ site_settings.site_name }}{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto px-4 py-10 sm:py-14">
+    <div class="bg-white rounded-3xl p-6 sm:p-10 border border-[#EFE8DF] shadow-sm text-center space-y-6">
+
+        {% if is_paid %}
+            <!-- آیکون پرداخت موفق -->
+            <div class="w-16 h-16 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 flex items-center justify-center mx-auto text-2xl font-bold">
+                ✓
+            </div>
+
+            <div>
+                <h1 class="text-xl sm:text-2xl font-bold text-espresso">سفارش شما با موفقیت ثبت و پرداخت شد</h1>
+                <p class="text-xs sm:text-sm text-espresso/70 mt-2">
+                    از خرید شما سپاسگزاریم. جزئیات سفارش شما جهت آماده‌سازی ثبت گردید.
+                </p>
+            </div>
+
+            <!-- باکس اطلاعات رسید -->
+            <div class="bg-ivory rounded-2xl p-5 border border-[#E8DDD3] text-right space-y-3 text-xs sm:text-sm">
+                <div class="flex justify-between items-center pb-2.5 border-b border-[#EFE8DF]">
+                    <span class="text-espresso/70">کد پیگیری سفارش:</span>
+                    <span class="font-bold text-base text-espresso" dir="ltr">{{ order.order_code }}</span>
+                </div>
+
+                {% if transaction and transaction.ref_id %}
+                <div class="flex justify-between items-center pb-2.5 border-b border-[#EFE8DF]">
+                    <span class="text-espresso/70">شماره پیگیری بانکی (Ref ID):</span>
+                    <span class="font-bold text-emerald-700" dir="ltr">{{ transaction.ref_id|fa_digits }}</span>
+                </div>
+                {% endif %}
+
+                <div class="flex justify-between items-center pb-2.5 border-b border-[#EFE8DF]">
+                    <span class="text-espresso/70">مبلغ پرداخت‌شده در درگاه:</span>
+                    <span class="font-bold text-espresso">{{ order.paid_amount|toman }} تومان</span>
+                </div>
+
+                {% if order.remaining_amount > 0 %}
+                <div class="flex justify-between items-center pt-1 text-[#8E4A42] font-semibold">
+                    <span>مانده حساب (تسویه پیش از ارسال):</span>
+                    <span>{{ order.remaining_amount|toman }} تومان</span>
+                </div>
+                {% else %}
+                <div class="flex justify-between items-center pt-1 text-emerald-700 font-semibold">
+                    <span>وضعیت تسویه:</span>
+                    <span>تسویه کامل</span>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- دکمه ارسال مستقیم رسید به واتساپ مزون -->
+            <div class="space-y-3 pt-2">
+                {% if site_settings.whatsapp_number %}
+                <a href="https://wa.me/{{ site_settings.whatsapp_number }}?text={{ 'سلام، سفارش من با کد '|urlencode }}{{ order.order_code|urlencode }}{{ ' و کد رهگیری بانکی '|urlencode }}{{ transaction.ref_id|default:'-'|urlencode }}{{ ' به مبلغ '|urlencode }}{{ order.paid_amount|toman|urlencode }}{{ ' تومان ثبت شد.'|urlencode }}"
+                   target="_blank" rel="noopener"
+                   class="block w-full bg-espresso text-white py-4 rounded-2xl text-sm font-bold hover:bg-taupe transition shadow-sm">
+                    ارسال رسید و هماهنگی در واتساپ فروشگاه
+                </a>
+                {% endif %}
+
+                <a href="{% url 'catalog:home' %}" class="block w-full border border-[#DFD3C7] text-espresso py-3.5 rounded-2xl text-xs sm:text-sm font-medium hover:bg-sand transition">
+                    بازگشت به صفحه اصلی فروشگاه
+                </a>
+            </div>
+
+        {% else %}
+            <!-- آیکون پرداخت ناموفق / لغو شده -->
+            <div class="w-16 h-16 rounded-full bg-red-50 border border-red-200 text-red-700 flex items-center justify-center mx-auto text-2xl font-bold">
+                ✕
+            </div>
+
+            <div>
+                <h1 class="text-xl sm:text-2xl font-bold text-espresso">پرداخت انجام نشد</h1>
+                <p class="text-xs sm:text-sm text-espresso/70 mt-2 leading-relaxed">
+                    عملیات بانکی لغو شد یا با خطا مواجه گردید. سفارش شما با کد <strong>{{ order.order_code }}</strong> محفوظ است و می‌توانید مجدداً پرداخت را انجام دهید.
+                </p>
+            </div>
+
+            <div class="space-y-3 pt-2">
+                <a href="{% url 'payments:start_payment' order.access_token %}"
+                   class="block w-full bg-espresso text-white py-4 rounded-2xl text-sm font-bold hover:bg-taupe transition shadow-sm">
+                    تلاش مجدد جهت پرداخت ({{ order.payable_now|toman }} تومان)
+                </a>
+                <a href="{% url 'orders:order_summary' order.access_token %}"
+                   class="block w-full border border-[#DFD3C7] text-espresso py-3.5 rounded-2xl text-xs sm:text-sm font-medium hover:bg-sand transition">
+                    مشاهده مجدد پیش‌فاکتور
+                </a>
+            </div>
+        {% endif %}
+
+    </div>
+</div>
+{% endblock %}

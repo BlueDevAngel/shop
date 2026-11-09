@@ -1,0 +1,280 @@
+{% extends 'base.html' %}
+{% load price_filters %}
+
+{% block title %}{{ product.name }} | {{ site_settings.site_name }}{% endblock %}
+
+{% block content %}
+<!-- تزریق امن اطلاعات سایزها و قیمت‌ها به صفحه -->
+{{ variants_data|json_script:"variants-data" }}
+
+<div class="max-w-6xl mx-auto px-4 py-6 sm:py-10"
+     x-data="{
+        activeImage: '{{ product.main_image.url }}',
+        variants: JSON.parse(document.getElementById('variants-data').textContent),
+        selectedVariantId: null,
+        wantCustomTailoring: false,
+        sizeGuideOpen: false,
+        init() {
+            const firstAvailable = this.variants.find(v => v.stock > 0) || this.variants[0];
+            if (firstAvailable) {
+                this.selectedVariantId = firstAvailable.id;
+            }
+        },
+        get currentVariant() {
+            return this.variants.find(v => v.id === this.selectedVariantId) || null;
+        },
+        formatPrice(amount) {
+            if (amount === null || amount === undefined) return '';
+            return new Intl.NumberFormat('fa-IR').format(amount);
+        }
+     }">
+
+    <!-- مسیر راهنما (Breadcrumb) -->
+    <nav class="text-xs text-espresso/60 mb-6 flex items-center gap-2">
+        <a href="{% url 'catalog:home' %}" class="hover:text-espresso">صفحه اصلی</a>
+        <span>/</span>
+        <a href="{% url 'catalog:home' %}?category={{ product.category.slug }}" class="hover:text-espresso">{{ product.category.name }}</a>
+        <span>/</span>
+        <span class="text-espresso font-medium">{{ product.name }}</span>
+    </nav>
+
+    <div class="grid grid-cols-1 md:grid-cols-12 gap-8 lg:gap-12 bg-white p-4 sm:p-8 rounded-3xl border border-[#EFE8DF]">
+        
+        <!-- ستون راست: گالری تصاویر محصول (۵ ستون از ۱۲) -->
+        <div class="md:col-span-5">
+            <div class="aspect-[3/4] rounded-2xl overflow-hidden bg-sand border border-[#EFE8DF] mb-3">
+                <img :src="activeImage" alt="{{ product.name }}" class="w-full h-full object-cover object-top transition-all duration-300">
+            </div>
+
+            <!-- تصاویر بندانگشتی (Thumbnails) -->
+            {% if product.images.all %}
+            <div class="flex gap-2.5 overflow-x-auto no-scrollbar py-1">
+                <button type="button" @click="activeImage = '{{ product.main_image.url }}'"
+                        :class="activeImage === '{{ product.main_image.url }}' ? 'ring-2 ring-espresso opacity-100' : 'opacity-60 hover:opacity-100'"
+                        class="w-16 h-20 rounded-xl overflow-hidden flex-shrink-0 border border-[#E8DDD3] transition">
+                    <img src="{{ product.main_image.url }}" class="w-full h-full object-cover">
+                </button>
+                {% for img in product.images.all %}
+                <button type="button" @click="activeImage = '{{ img.image.url }}'"
+                        :class="activeImage === '{{ img.image.url }}' ? 'ring-2 ring-espresso opacity-100' : 'opacity-60 hover:opacity-100'"
+                        class="w-16 h-20 rounded-xl overflow-hidden flex-shrink-0 border border-[#E8DDD3] transition">
+                    <img src="{{ img.image.url }}" alt="{{ img.alt_text|default:product.name }}" class="w-full h-full object-cover">
+                </button>
+                {% endfor %}
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- ستون چپ: اطلاعات، سایزبندی هوشمند و فرم خرید (۷ ستون از ۱۲) -->
+        <div class="md:col-span-7 flex flex-col justify-between">
+            <div>
+                <!-- دسته‌بندی و کد محصول -->
+                <div class="flex items-center justify-between text-xs text-taupe mb-2">
+                    <span>{{ product.category.name }}</span>
+                    {% if product.code %}
+                        <span>کد: {{ product.code|fa_digits }}</span>
+                    {% endif %}
+                </div>
+
+                <!-- نام محصول -->
+                <h1 class="text-xl sm:text-2xl font-bold text-espresso mb-4">{{ product.name }}</h1>
+
+                <!-- باکس قیمت لحظه‌ای (پویا بر اساس سایز انتخابی) -->
+                <div class="bg-ivory border border-[#E8DDD3] rounded-2xl p-4 mb-6 flex items-center justify-between">
+                    <div>
+                        <span class="text-xs text-espresso/70 block">قیمت سایز انتخابی:</span>
+                        <template x-if="currentVariant && currentVariant.price_adjustment > 0">
+                            <span class="text-[11px] text-taupe mt-0.5 block">
+                                (شامل <span x-text="formatPrice(currentVariant.price_adjustment)"></span> تومان افزایش قیمت سایز)
+                            </span>
+                        </template>
+                    </div>
+
+                    <div class="text-left">
+                        {% if product.has_discount %}
+                            <span class="text-xs text-espresso/40 line-through block">
+                                {{ product.base_price|toman }} تومان
+                            </span>
+                        {% endif %}
+                        <template x-if="currentVariant">
+                            <div class="text-xl sm:text-2xl font-bold text-espresso">
+                                <span x-text="formatPrice(currentVariant.final_price)"></span>
+                                <span class="text-xs font-normal text-espresso/75">تومان</span>
+                            </div>
+                        </template>
+                        <template x-if="!currentVariant">
+                            <div class="text-xl font-bold text-espresso">
+                                {{ product.get_effective_base_price|toman }}
+                                <span class="text-xs font-normal">تومان</span>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+
+                <!-- مشخصات جنس و پارچه -->
+                {% if product.fabric_details %}
+                <div class="mb-6">
+                    <h2 class="text-xs font-semibold text-espresso/70 mb-1.5">مشخصات پارچه و دوخت:</h2>
+                    <p class="text-sm text-espresso bg-sand/50 px-3.5 py-2.5 rounded-xl border border-[#EFE8DF]">
+                        {{ product.fabric_details|fa_digits }}
+                    </p>
+                </div>
+                {% endif %}
+
+                <!-- فرم افزودن به سبد خرید -->
+                <form method="post" action="{% url 'orders:cart_add' %}" class="space-y-6">                    {% csrf_token %}
+                    <input type="hidden" name="variant_id" :value="selectedVariantId">
+
+                    <!-- ۱. انتخاب سایز -->
+                    <div>
+                        <div class="flex items-center justify-between mb-2.5">
+                            <div class="flex items-center justify-between mb-2.5">
+                                <label class="text-sm font-semibold text-espresso">انتخاب سایز:</label>
+                                <button type="button" @click="sizeGuideOpen = true" class="text-xs text-taupe hover:text-espresso underline underline-offset-4">
+                                     راهنمای انتخاب سایز
+                                </button>
+                            </div>
+                            <template x-if="currentVariant && currentVariant.stock > 0 && currentVariant.stock <= 3">
+                                <span class="text-xs text-[#8E4A42] font-medium">
+                                    تنها <span x-text="formatPrice(currentVariant.stock)"></span> عدد در انبار باقی مانده
+                                </span>
+                            </template>
+                        </div>
+
+                        <div class="grid grid-cols-3 sm:grid-cols-4 gap-2.5">
+                            <template x-for="v in variants" :key="v.id">
+                                <button type="button"
+                                        @click="if(v.stock > 0) selectedVariantId = v.id"
+                                        :disabled="v.stock === 0"
+                                        :class="{
+                                            'bg-espresso text-white border-espresso shadow-sm': selectedVariantId === v.id,
+                                            'bg-white text-espresso border-[#DFD3C7] hover:border-taupe': selectedVariantId !== v.id && v.stock > 0,
+                                            'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed opacity-60': v.stock === 0
+                                        }"
+                                        class="py-2.5 px-3 rounded-xl border text-center transition flex flex-col items-center justify-center">
+                                    <span class="text-sm font-bold" x-text="v.size_title"></span>
+                                    <template x-if="v.stock === 0">
+                                        <span class="text-[10px] mt-0.5">ناموجود</span>
+                                    </template>
+                                    <template x-if="v.stock > 0 && v.price_adjustment > 0">
+                                        <span class="text-[10px] opacity-80 mt-0.5">
+                                            +<span x-text="formatPrice(v.price_adjustment)"></span> ت
+                                        </span>
+                                    </template>
+                                </button>
+                            </template>
+                        </div>
+                    </div>
+
+                    <!-- ۲. باکس شخصی‌دوزی (فقط اگر ادمین برای این محصول فعال کرده باشد) -->
+                    {% if product.allow_custom_measurements %}
+                    <div class="bg-sand/60 border border-[#E2D5C8] rounded-2xl p-4">
+                        <label class="flex items-center gap-2.5 cursor-pointer select-none">
+                            <input type="checkbox" x-model="wantCustomTailoring" class="w-4 h-4 accent-espresso rounded">
+                            <span class="text-sm font-semibold text-espresso">
+                                تمایل به سفارش‌دوزی (دوخت بر اساس اندازه‌های دقیق خودم) دارم
+                            </span>
+                        </label>
+
+                        <div x-show="wantCustomTailoring" x-cloak x-transition class="mt-3 pt-3 border-t border-[#E2D5C8]">
+                            {% if product.custom_measurement_hint %}
+                                <p class="text-xs text-espresso/75 mb-2 leading-relaxed">
+                                    {{ product.custom_measurement_hint }}
+                                </p>
+                            {% endif %}
+                            <textarea name="custom_measurements" rows="3"
+                                      placeholder="مثال: دور سینه ۹۶، دور کمر ۸۰، قد کت ۷۲ سانتی‌متر..."
+                                      class="w-full bg-white border border-[#DFD3C7] rounded-xl p-3 text-sm focus:outline-none focus:border-taupe"></textarea>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- ۳. اطلاع‌رسانی پرداخت دومرحله‌ای (در صورت فعال بودن در تنظیمات سایت) -->
+                    {% if site_settings.enable_two_stage_payment %}
+                    <div class="flex items-center gap-2.5 text-xs text-espresso/80 bg-[#F4ECE6] px-4 py-3 rounded-xl">
+                        <span class="w-2 h-2 rounded-full bg-taupe flex-shrink-0"></span>
+                        <span>
+                            امکان <strong>پرداخت دومرحله‌ای</strong> برای این محصول فعال است ({{ site_settings.deposit_percentage|fa_digits }}٪ در زمان ثبت سفارش و مابقی قبل از ارسال).
+                        </span>
+                    </div>
+                    {% endif %}
+
+                    <!-- ۴. دکمه‌های خرید و مشاوره واتساپ -->
+                    <div class="flex flex-col sm:flex-row gap-3 pt-2">
+                        <button type="submit"
+                                :disabled="!currentVariant || currentVariant.stock === 0"
+                                class="flex-1 bg-espresso text-white py-3.5 px-6 rounded-2xl font-semibold text-sm hover:bg-taupe transition disabled:bg-gray-300 disabled:cursor-not-allowed shadow-sm">
+                            <span x-show="currentVariant && currentVariant.stock > 0">افزودن به سبد خرید</span>
+                            <span x-show="!currentVariant || currentVariant.stock === 0">این سایز ناموجود است</span>
+                        </button>
+
+                        {% if site_settings.whatsapp_number %}
+                        <a href="https://wa.me/{{ site_settings.whatsapp_number }}?text={{ 'سلام، برای سفارش محصول «'|urlencode }}{{ product.name|urlencode }}{{ '» راهنمایی می‌خواستم.'|urlencode }}"
+                           target="_blank" rel="noopener"
+                           class="sm:w-auto text-center border border-[#D5C3B5] bg-white text-espresso py-3.5 px-5 rounded-2xl text-sm font-medium hover:bg-sand transition">
+                            مشاوره در واتساپ
+                        </a>
+                        {% endif %}
+                    </div>
+                </form>
+
+                <!-- توضیحات تکمیلی محصول -->
+                {% if product.description %}
+                <div class="mt-8 pt-6 border-t border-[#EFE8DF]">
+                    <h2 class="text-sm font-semibold text-espresso mb-2">توضیحات بیشتر:</h2>
+                    <div class="text-sm text-espresso/80 leading-relaxed whitespace-pre-line font-light">
+                        {{ product.description|fa_digits }}
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+    </div>
+
+    <!-- محصولات مشابه از همین دسته‌بندی -->
+    {% if related_products %}
+    <section class="mt-14">
+        <h2 class="text-lg font-bold text-espresso mb-5">مدل‌های مشابه در {{ product.category.name }}</h2>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6">
+            {% for rel in related_products %}
+            <a href="{% url 'catalog:product_detail' rel.slug %}" class="group bg-white rounded-2xl overflow-hidden border border-[#EFE8DF] hover:shadow-md transition">
+                <div class="aspect-[3/4] bg-sand overflow-hidden">
+                    <img src="{{ rel.main_image.url }}" alt="{{ rel.name }}" class="w-full h-full object-cover group-hover:scale-105 transition duration-500">
+                </div>
+                <div class="p-3">
+                    <h3 class="text-sm font-semibold text-espresso line-clamp-1">{{ rel.name }}</h3>
+                    <p class="text-xs font-bold text-taupe mt-1">{{ rel.get_effective_base_price|toman }} تومان</p>
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+    </section>
+    {% endif %}
+<!-- پنجره پاپ‌آپ (Modal) راهنمای سایزبندی -->
+    <div x-show="sizeGuideOpen" x-cloak x-transition.opacity
+         class="fixed inset-0 z-50 bg-espresso/60 backdrop-blur-xs flex items-center justify-center p-4"
+         @click.self="sizeGuideOpen = false">
+        <div class="bg-white rounded-3xl max-w-md w-full p-6 border border-[#EFE8DF] shadow-xl space-y-4">
+            <div class="flex items-center justify-between border-b border-[#F5EFEA] pb-3">
+                <h3 class="text-base font-bold text-espresso">راهنمای انتخاب سایز</h3>
+                <button type="button" @click="sizeGuideOpen = false" class="text-espresso/50 hover:text-espresso text-lg">✕</button>
+            </div>
+
+            {% if site_settings.size_guide_image %}
+                <img src="{{ site_settings.size_guide_image.url }}" alt="جدول سایزبندی" class="w-full rounded-2xl border border-[#EFE8DF]">
+            {% endif %}
+
+            {% if site_settings.size_guide_text %}
+                <div class="text-xs sm:text-sm text-espresso/85 leading-relaxed whitespace-pre-line bg-ivory p-4 rounded-2xl border border-[#E8DDD3]">
+                    {{ site_settings.size_guide_text|fa_digits }}
+                </div>
+            {% endif %}
+
+            <button type="button" @click="sizeGuideOpen = false" class="w-full bg-espresso text-white py-3 rounded-xl text-xs font-semibold">
+                متوجه شدم
+            </button>
+        </div>
+    </div>
+</div>
+{% endblock %}
