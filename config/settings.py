@@ -46,12 +46,14 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',  # <--- این خط اضافه شود
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+
 ]
 
 ROOT_URLCONF = 'config.urls'
@@ -141,3 +143,39 @@ _ZARINPAL_SUBDOMAIN = 'sandbox' if ZARINPAL_SANDBOX else 'payment'
 ZARINPAL_REQUEST_URL = f"https://{_ZARINPAL_SUBDOMAIN}.zarinpal.com/pg/v4/payment/request.json"
 ZARINPAL_VERIFY_URL = f"https://{_ZARINPAL_SUBDOMAIN}.zarinpal.com/pg/v4/payment/verify.json"
 ZARINPAL_STARTPAY_URL = f"https://{_ZARINPAL_SUBDOMAIN}.zarinpal.com/pg/StartPay/"
+STORAGES = {
+    "default": {
+        "BACKEND": "django.core.files.storage.FileSystemStorage",
+    },
+    "staticfiles": {
+        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+    },
+}
+# Security & CSRF Configuration
+CSRF_TRUSTED_ORIGINS = config(
+    'CSRF_TRUSTED_ORIGINS',
+    default='http://127.0.0.1:8000,http://localhost:8000',
+    cast=Csv()
+)
+
+# محدودیت حجم آپلود درخواست‌ها (حداکثر ۱۰ مگابایت برای جلوگیری از حملات DoS)
+DATA_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024
+FILE_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024
+
+if not DEBUG:
+    SECURE_BROWSER_XSS_FILTER = True
+    SECURE_CONTENT_TYPE_NOSNIFF = True
+    X_FRAME_OPTIONS = 'DENY'
+
+    # تنظیمات امنیت کوکی‌ها و SSL در سرور واقعی
+    CSRF_COOKIE_SECURE = True
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_HTTPONLY = True
+    SESSION_COOKIE_HTTPONLY = True
+    SESSION_COOKIE_AGE = 60 * 60 * 24 * 14  # نگهداری سبد خرید مشتری تا ۱۴ روز
+
+    SECURE_SSL_REDIRECT = config('SECURE_SSL_REDIRECT', default=True, cast=bool)
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+    SECURE_HSTS_SECONDS = 31536000
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = True

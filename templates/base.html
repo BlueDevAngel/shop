@@ -65,13 +65,13 @@
             <!-- مرکز: لوگو یا نام برند -->
             <!-- مرکز: لوگو یا نام برند -->
             <div class="text-center w-1/3">
-                <a href="{% url 'catalog:home' %}" class="inline-flex items-center justify-center gap-2.5 group">
+                <a href="{% url 'catalog:home' %}" class="inline-flex max-w-full min-w-0 items-center justify-center gap-2.5 group">
                     {% if site_settings.logo %}
                         <img src="{{ site_settings.logo.url }}" alt="{{ site_settings.site_name }}" 
                              class="w-10 h-10 sm:w-11 sm:h-11 rounded-full object-cover object-top border border-taupe/50 shadow-xs flex-shrink-0">
                     {% endif %}
-                    <div class="flex flex-col items-center sm:items-start">
-                        <span class="text-base sm:text-xl font-bold tracking-tight text-espresso group-hover:text-taupe transition line-clamp-1">
+                    <div class="flex min-w-0 flex-col items-center sm:items-start">
+                        <span class="block max-w-full whitespace-normal break-words text-sm leading-tight sm:text-xl font-bold tracking-tight text-espresso group-hover:text-taupe transition">
                             {{ site_settings.site_name }}
                         </span>
                         {% if site_settings.tagline %}
@@ -182,17 +182,13 @@
                 </div>
 
                 <!-- نماد اعتماد الکترونیکی (اینماد) -->
+                {% if site_settings.enamad_html_code %}
                 <div class="flex flex-col items-start md:items-center justify-center">
-                    {% if site_settings.enamad_html_code %}
-                        <div class="bg-white p-3 rounded-2xl border border-[#E8DDD3]">
-                            {{ site_settings.enamad_html_code|safe }}
-                        </div>
-                    {% else %}
-                        <div class="bg-white/60 border border-dashed border-[#D5C3B5] rounded-2xl p-4 text-center text-xs text-espresso/50 w-32 h-32 flex items-center justify-center">
-                            جایگاه نماد اعتماد (اینماد)
-                        </div>
-                    {% endif %}
+                    <div class="bg-white p-3 rounded-2xl border border-[#E8DDD3]">
+                        {{ site_settings.enamad_html_code|safe }}
+                    </div>
                 </div>
+                {% endif %}
 
             </div>
 

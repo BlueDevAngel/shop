@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+
+{% block title %}صفحه مورد نظر یافت نشد | {{ site_settings.site_name }}{% endblock %}
+
+{% block content %}
+<div class="max-w-xl mx-auto px-4 py-16 sm:py-24 text-center">
+    <div class="bg-white rounded-3xl p-8 sm:p-12 border border-[#EFE8DF] shadow-xs space-y-5">
+        <span class="inline-block text-5xl sm:text-6xl font-bold text-taupe/40 tracking-widest">۴۰۴</span>
+        <h1 class="text-xl sm:text-2xl font-bold text-espresso">صفحه مورد نظر شما پیدا نشد</h1>
+        <p class="text-xs sm:text-sm text-espresso/70 leading-relaxed">
+            ممکن است آدرس صفحه تغییر کرده باشد یا این محصول دیگر در ویترین فروشگاه موجود نباشد.
+        </p>
+        <div class="pt-3 flex flex-col sm:flex-row gap-3 justify-center">
+            <a href="{% url 'catalog:home' %}" class="bg-espresso text-white px-6 py-3.5 rounded-2xl text-xs sm:text-sm font-bold hover:bg-taupe transition">
+                مشاهده ویترین فروشگاه
+            </a>
+            <a href="{% url 'orders:order_track' %}" class="border border-[#DFD3C7] text-espresso px-6 py-3.5 rounded-2xl text-xs sm:text-sm font-medium hover:bg-sand transition">
+                پیگیری سفارش
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}
