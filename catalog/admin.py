@@ -106,5 +106,5 @@ class ProductAdmin(admin.ModelAdmin):
     def total_stock_display(self, obj):
         stock = obj.total_stock
         if stock == 0:
-            return format_html('<span style="color: #dc2626; font-weight: bold;">ناموجود (0)</span>')
+            return format_html('<span style="color: #dc2626; font-weight: bold;">{}</span>','ناموجود (0) ')
         return f"{stock} عدد"
