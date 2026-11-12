@@ -13,10 +13,14 @@ class OrderItemInline(admin.TabularInline):
 
     @admin.display(description="قیمت واحد")
     def unit_price_display(self, obj):
+        if obj.unit_price is None:
+            return "—"
         return f"{obj.unit_price:,} تومان"
 
     @admin.display(description="جمع ردیف")
     def total_display(self, obj):
+        if obj.unit_price is None or obj.quantity is None:
+            return "—"
         return f"{obj.get_total_price():,} تومان"
 
 

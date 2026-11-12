@@ -1,0 +1,37 @@
+{% extends 'base.html' %}
+{% load price_filters %}
+
+{% block title %}علاقه‌مندی‌ها | {{ site_settings.site_name }}{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto px-4 py-8">
+    <h1 class="text-xl sm:text-2xl font-bold mb-6">علاقه‌مندی‌ها</h1>
+    <p class="text-xs text-espresso/60 mb-6">این فهرست در همین مرورگر و تا پایان نشست شما نگهداری می‌شود.</p>
+    {% if products %}
+        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
+            {% for product in products %}
+                <div class="bg-white rounded-2xl overflow-hidden border border-[#EFE8DF]">
+                    <a href="{% url 'catalog:product_detail' product.slug %}" class="block">
+                        <img src="{{ product.main_image.url }}" alt="{{ product.name }}" class="aspect-[3/4] w-full object-cover object-top bg-sand">
+                        <div class="p-4">
+                            <p class="text-xs text-taupe mb-1">{{ product.category.name }}</p>
+                            <h2 class="text-sm font-semibold">{{ product.name }}</h2>
+                            <p class="text-sm font-bold mt-2">{{ product.get_effective_base_price|toman }} تومان</p>
+                        </div>
+                    </a>
+                    <form method="post" action="{% url 'catalog:favorite_update' product_id=product.id action='remove' %}" class="px-4 pb-4">
+                        {% csrf_token %}
+                        <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                        <button type="submit" class="text-xs text-[#8E4A42] hover:underline">حذف از علاقه‌مندی‌ها</button>
+                    </form>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="bg-white rounded-3xl border border-[#EFE8DF] p-12 text-center max-w-md mx-auto">
+            <p class="text-espresso/70 mb-4">هنوز محصولی به علاقه‌مندی‌ها اضافه نکرده‌اید.</p>
+            <a href="{% url 'catalog:home' %}" class="inline-block bg-espresso text-white text-xs px-5 py-2.5 rounded-xl hover:bg-taupe transition">مشاهده محصولات</a>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

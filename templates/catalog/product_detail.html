@@ -79,6 +79,16 @@
                 <!-- نام محصول -->
                 <h1 class="text-xl sm:text-2xl font-bold text-espresso mb-4">{{ product.name }}</h1>
 
+                <form method="post" action="{% if is_favorite %}{% url 'catalog:favorite_update' product_id=product.id action='remove' %}{% else %}{% url 'catalog:favorite_update' product_id=product.id action='add' %}{% endif %}" class="mb-6">
+                    {% csrf_token %}
+                    <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                    {% if is_favorite %}
+                        <button type="submit" class="text-sm text-taupe hover:text-espresso transition">♥ حذف از علاقه‌مندی‌ها</button>
+                    {% else %}
+                        <button type="submit" class="text-sm text-taupe hover:text-espresso transition">♡ افزودن به علاقه‌مندی‌ها</button>
+                    {% endif %}
+                </form>
+
                 <!-- باکس قیمت لحظه‌ای (پویا بر اساس سایز انتخابی) -->
                 <div class="bg-ivory border border-[#E8DDD3] rounded-2xl p-4 mb-6 flex items-center justify-between">
                     <div>

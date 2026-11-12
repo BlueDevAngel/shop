@@ -1,9 +1,12 @@
-from django.test import TestCase
+from django.test import TestCase, override_settings
+from django.contrib.auth import get_user_model
+from django.contrib.admin.sites import AdminSite
 from django.urls import reverse
 from django.core.files.uploadedfile import SimpleUploadedFile
 from core.models import SiteSetting
 from catalog.models import Category, Product, ProductVariant
-from .models import Order
+from .admin import OrderItemInline
+from .models import Order, OrderItem
 
 
 class OrderAndCartSecurityTest(TestCase):
@@ -59,3 +62,28 @@ class OrderAndCartSecurityTest(TestCase):
         # ۵۰ درصد از 4,800,000 می‌شود 2,400,000 + 70,000 ارسال = 2,470,000
         self.assertEqual(order.payable_now, 2470000)
         self.assertEqual(order.items.first().custom_measurements, 'دور سینه ۹۸، قد کت ۷۵')
+
+    @override_settings(STORAGES={
+        'default': {'BACKEND': 'django.core.files.storage.FileSystemStorage'},
+        'staticfiles': {'BACKEND': 'django.contrib.staticfiles.storage.StaticFilesStorage'},
+    })
+    def test_admin_order_change_renders_existing_and_empty_inline(self):
+        order = Order.objects.create(
+            full_name='مشتری', phone='09121234567', province='تهران',
+            city='تهران', address='آدرس',
+        )
+        OrderItem.objects.create(
+            order=order, product=self.product, variant=self.variant_44,
+            product_name=self.product.name, size_title='44', unit_price=4800000, quantity=2,
+        )
+        user = get_user_model().objects.create_superuser(username='admin', password='test-password')
+        self.client.force_login(user)
+        response = self.client.get(reverse('admin:orders_order_change', args=[order.pk]))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, '4,800,000')
+        self.assertContains(response, '9,600,000')
+
+        inline = OrderItemInline(Order, AdminSite())
+        self.assertEqual(inline.unit_price_display(OrderItem()), '—')
+        self.assertEqual(inline.total_display(OrderItem()), '—')
+        self.assertEqual(inline.total_display(OrderItem(unit_price=0, quantity=1)), '0 تومان')

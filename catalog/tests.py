@@ -1,4 +1,5 @@
-from django.test import TestCase
+from django.test import Client, TestCase
+from django.urls import reverse
 from django.core.exceptions import ValidationError
 from django.core.files.uploadedfile import SimpleUploadedFile
 from .models import Category, Product, ProductVariant
@@ -57,3 +58,42 @@ class CatalogPricingTest(TestCase):
         response = self.client.get(f'/product/{self.product.slug}/')
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "4850000")
+
+
+class FavoritesTest(TestCase):
+    def setUp(self):
+        category = Category.objects.create(name="پوشاک")
+        self.product = Product.objects.create(
+            category=category, name="کت نمونه ویژه", base_price=1000, main_image="products/main/coat.jpg",
+        )
+        self.add_url = reverse('catalog:favorite_update', args=[self.product.id, 'add'])
+        self.remove_url = reverse('catalog:favorite_update', args=[self.product.id, 'remove'])
+        self.list_url = reverse('catalog:favorites')
+        self.detail_url = reverse('catalog:product_detail', args=[self.product.slug])
+
+    def test_add_list_and_remove_favorite(self):
+        self.assertContains(self.client.get(self.detail_url), "افزودن به علاقه‌مندی‌ها")
+        self.client.post(self.add_url, {'next': self.detail_url})
+        self.client.post(self.add_url, {'next': self.detail_url})
+        self.assertEqual(self.client.session['favorite_products'], [self.product.id])
+        self.assertContains(self.client.get(self.list_url), self.product.name)
+        self.assertContains(self.client.get(self.detail_url), "حذف از علاقه‌مندی‌ها")
+        self.assertContains(self.client.get(reverse('catalog:home')), f'حذف {self.product.name} از علاقه‌مندی‌ها')
+        self.client.post(self.remove_url, {'next': self.list_url})
+        self.assertNotContains(self.client.get(self.list_url), self.product.name)
+
+    def test_favorites_are_private_to_session_and_hide_inactive_products(self):
+        self.client.post(self.add_url)
+        self.assertNotContains(Client().get(self.list_url), self.product.name)
+        self.product.is_active = False
+        self.product.save()
+        self.assertNotContains(self.client.get(self.list_url), self.product.name)
+        self.assertEqual(self.client.post(self.add_url).status_code, 404)
+        self.assertEqual(self.client.post(self.remove_url).status_code, 302)
+
+    def test_updates_require_post_and_csrf_and_reject_external_redirects(self):
+        self.assertEqual(self.client.get(self.add_url).status_code, 405)
+        self.assertEqual(Client(enforce_csrf_checks=True).post(self.add_url).status_code, 403)
+        response = self.client.post(self.add_url, {'next': 'https://example.com/'})
+        self.assertRedirects(response, self.list_url)
+        self.assertEqual(self.client.post(reverse('catalog:favorite_update', args=[self.product.id, 'bad'])).status_code, 404)

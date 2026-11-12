@@ -126,6 +126,7 @@
     {% if products %}
         <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
             {% for product in products %}
+                <div class="relative">
                 <a href="{% url 'catalog:product_detail' product.slug %}" class="group bg-white rounded-2xl overflow-hidden border border-[#EFE8DF] hover:border-[#D5C3B5] transition-all duration-300 hover:shadow-md flex flex-col">
                     
                     <!-- تصویر عمودی با نسبت 3:4 -->
@@ -189,6 +190,12 @@
                     </div>
 
                 </a>
+                <form method="post" action="{% if product.id in favorite_ids %}{% url 'catalog:favorite_update' product_id=product.id action='remove' %}{% else %}{% url 'catalog:favorite_update' product_id=product.id action='add' %}{% endif %}" class="absolute top-2.5 left-2.5">
+                    {% csrf_token %}
+                    <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                    <button type="submit" class="w-9 h-9 rounded-full bg-white/90 text-[#8E4A42] shadow-sm text-xl hover:bg-white transition" aria-label="{% if product.id in favorite_ids %}حذف {{ product.name }} از علاقه‌مندی‌ها{% else %}افزودن {{ product.name }} به علاقه‌مندی‌ها{% endif %}" aria-pressed="{% if product.id in favorite_ids %}true{% else %}false{% endif %}">{% if product.id in favorite_ids %}♥{% else %}♡{% endif %}</button>
+                </form>
+                </div>
             {% endfor %}
         </div>
     {% else %}
